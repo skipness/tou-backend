@@ -11,6 +11,10 @@ const nanoid = customAlphabet(
   '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
   8
 );
+const uploadPath =
+  process.env !== undefined
+    ? path.resolve('upload')
+    : path.resolve('/var/www/tou/upload');
 
 app.use(cors({ origin: '*' }));
 app.use(async (context, next) => {
@@ -25,7 +29,7 @@ app.use(async (context, next) => {
 
 const storage = multer.diskStorage({
   destination: (request, file, callback) => {
-    callback(null, path.resolve('/var/www/tou/upload'));
+    callback(null, uploadPath);
   },
   filename: (request, file, callback) => {
     callback(null, `${nanoid()}.${file.mimetype.split('/').pop()}`);
@@ -33,13 +37,8 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   fileFilter: (request, file, callback) => {
-    if (
-      file.mimetype !== String('image/gif') &&
-      file.mimetype !== String('image/jpeg') &&
-      file.mimetype !== String('image/png') &&
-      file.mimetype !== String('image/tiff')
-    ) {
-      return callback(new Error('Not support file type'), false);
+    if (!RegExp('^image\\/(bmp|gif|jpeg|png|x\\-icon)+$').test(file.mimetype)) {
+      return callback(new Error('Unsupported file type'), false);
     }
     callback(null, true);
   },
